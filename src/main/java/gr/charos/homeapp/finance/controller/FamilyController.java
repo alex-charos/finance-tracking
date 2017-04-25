@@ -1,6 +1,8 @@
 package gr.charos.homeapp.finance.controller;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -12,7 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import gr.charos.homeapp.commons.model.Family;
 import gr.charos.homeapp.commons.model.Spender;
+import gr.charos.homeapp.commons.model.transaction.AdHocTransaction;
+import gr.charos.homeapp.commons.model.transaction.Transaction;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
 import gr.charos.homeapp.finance.dto.FamilyDTO;
 import gr.charos.homeapp.finance.repository.PersistentFamilyRepository;
@@ -48,6 +53,18 @@ public class FamilyController {
     	List<PersistentFamily> pfs =familyRepository.findAll();
     	
    		return pfs.stream().map(p -> modelMapper.map(p, FamilyDTO.class)).collect(Collectors.toList());
+   	}
+    
+    @RequestMapping(value = "/expense-descriptions/{familyId}", method = RequestMethod.GET)
+   	public Set<String> getDistinctExpenseDescriptions(@PathVariable String familyId) {
+    	Family f = familyRepository.findOne(familyId);
+    	Set<String> ds = new HashSet<String>();
+    	for (Transaction t : f.getOutgoingTransactions()) {
+    		if (t instanceof AdHocTransaction) {
+    			ds.add(((AdHocTransaction) t).getDescription());
+    		}
+    	}
+    	return ds;
    	}
     @RequestMapping(value="/{familyId}",method = RequestMethod.DELETE)
 	public void deleteFamily(FamilyDTO family) {

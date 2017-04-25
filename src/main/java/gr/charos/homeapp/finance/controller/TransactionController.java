@@ -105,6 +105,9 @@ public class TransactionController {
 	public TransactionDTO addAdHocTransaction(@PathVariable String familyId, @PathVariable String memberCode,@RequestBody TransactionDTO transactionDto) {
 		PersistentFamily family = familyRepository.findOne(familyId);
 
+		if (null ==  transactionDto.getTransactionType()) {
+			throw new IllegalArgumentException("No Transaction Type");
+		}
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 		AdHocTransaction t = new AdHocTransaction(UUIDGenerator.getUUID(), transactionDto.getDate(),
 				transactionDto.getTransactionType(), transactionDto.getAmmountInCents(), transactionDto.getDescription());
