@@ -1,13 +1,15 @@
 package gr.charos.homeapp.finance.controller;
 
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,8 +23,11 @@ import gr.charos.homeapp.commons.model.forecast.Forecast;
 import gr.charos.homeapp.commons.model.transaction.AdHocTransaction;
 import gr.charos.homeapp.commons.model.transaction.ForecastTransaction;
 import gr.charos.homeapp.commons.model.transaction.Transaction;
+import gr.charos.homeapp.finance.context.IDTokenContext;
+import gr.charos.homeapp.finance.domain.GroupReport;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
 import gr.charos.homeapp.finance.dto.TransactionDTO;
+import gr.charos.homeapp.finance.predicates.DateFilter;
 import gr.charos.homeapp.finance.repository.PersistentFamilyRepository;
 import gr.charos.homeapp.finance.utils.FamilyUtil;
 import gr.charos.homeapp.finance.utils.UUIDGenerator;
@@ -34,20 +39,21 @@ public class TransactionController {
 
 	@Autowired
 	PersistentFamilyRepository familyRepository;
+	
+
 
 	@Autowired
 	ModelMapper modelMapper;
 
 	@RequestMapping(value = "/incoming/{familyId}", method = RequestMethod.GET)
-	public Set<TransactionDTO> getIncomingTransactions(@PathVariable String familyId, @RequestParam(required=true) Long fromDate, @RequestParam(required=true) Long toDate) {
+	public List<TransactionDTO> getIncomingTransactions(@PathVariable String familyId, @RequestParam(required=true) Long fromDate, @RequestParam(required=true) Long toDate) {
 		PersistentFamily family = familyRepository.findOne(familyId);
 		return mapTransactions(family.getIncomingTransactions(), fromDate, toDate);
 	}
 	
-	private Set<TransactionDTO> mapTransactions(Set<Transaction> transactions, Long fromDate, Long toDate) {
+	private List<TransactionDTO> mapTransactions(Set<Transaction> transactions, Long fromDate, Long toDate) {
 		return transactions.stream()
-				.filter(p -> (p.getDate().after( new Date(fromDate)) || p.getDate().equals(new Date(fromDate)) ) 
-				&& ( p.getDate().before(new Date(toDate)) || p.getDate().equals( new Date(toDate) )) )
+				.filter( DateFilter.isBetweenDates(new Date(fromDate), new Date(toDate)))
 				.map(transaction -> {
 					TransactionDTO dto =modelMapper.map(transaction, TransactionDTO.class);
 					if (transaction instanceof ForecastTransaction) {
@@ -57,14 +63,31 @@ public class TransactionController {
 						dto.setAdHoc(true);
 					}
 					
-					return dto ;}).
+					return dto ;}).sorted(Comparator.comparing(TransactionDTO::getDate)).
 				
-				collect(Collectors.toSet());
+				collect(Collectors.toList());
 	}
-	@RequestMapping(value = "/outgoing/{familyId}", method = RequestMethod.GET)
-	public Set<TransactionDTO> getOutgoingTransactions(@PathVariable String familyId, @RequestParam(required=true) Long fromDate, @RequestParam(required=true) Long toDate) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+	@RequestMapping(value = "/outgoing", method = RequestMethod.GET)
+	public List<TransactionDTO> getOutgoingTransactions(@RequestParam(required=true) Long fromDate, @RequestParam(required=true) Long toDate) {
+		/**
+		 * TODO: member/family association
+		 */
+		String username = IDTokenContext.getUsername();
+		PersistentFamily family = familyRepository.findByMembersUsername(username).stream().findFirst().get();
 		return mapTransactions(family.getOutgoingTransactions(), fromDate, toDate);
+	}
+	
+	@RequestMapping(value = "/outgoing/grouping", method = RequestMethod.GET)
+	public List<GroupReport> getOutgoingTransactionsGrouped() {
+		 
+		String username = IDTokenContext.getUsername();
+		PersistentFamily family = familyRepository.findByMembersUsername(username).stream().findFirst().get();
+		
+		
+		GroupReport group1 = new GroupReport(ChronoUnit.DAYS, family.getOutgoingTransactions());
+		GroupReport group2 = new GroupReport(ChronoUnit.WEEKS, family.getOutgoingTransactions());
+		GroupReport group3 = new GroupReport(ChronoUnit.MONTHS , family.getOutgoingTransactions());
+		return Arrays.asList(group1,group2, group3);
 	}
 	
 	@RequestMapping(value = "/incoming/{familyId}/{memberCode}", method = RequestMethod.GET)

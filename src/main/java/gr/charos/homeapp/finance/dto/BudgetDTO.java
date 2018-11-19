@@ -8,6 +8,7 @@ public class BudgetDTO {
 	private Date dateFrom;
 	private Date dateTo;
 	private String budgetCode;
+	private int ammountInCents;
 
 	
 	public String getDescription() {
@@ -33,6 +34,12 @@ public class BudgetDTO {
 	}
 	public void setBudgetCode(String budgetCode) {
 		this.budgetCode = budgetCode;
+	}
+	public int getAmmountInCents() {
+		return ammountInCents;
+	}
+	public void setAmmountInCents(int ammountInCents) {
+		this.ammountInCents = ammountInCents;
 	}
 	
 

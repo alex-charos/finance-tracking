@@ -10,14 +10,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.auth0.jwt.JWT;
 
 import gr.charos.homeapp.commons.model.Family;
 import gr.charos.homeapp.commons.model.Spender;
 import gr.charos.homeapp.commons.model.transaction.AdHocTransaction;
 import gr.charos.homeapp.commons.model.transaction.Transaction;
+import gr.charos.homeapp.finance.context.IDTokenContext;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
 import gr.charos.homeapp.finance.dto.FamilyDTO;
 import gr.charos.homeapp.finance.repository.PersistentFamilyRepository;
@@ -34,43 +39,51 @@ public class FamilyController {
 	@Autowired
 	ModelMapper modelMapper;
 
-	
-    @RequestMapping(method = RequestMethod.POST)
-    public FamilyDTO createFamily(@RequestBody FamilyDTO family) {
+	@RequestMapping(method = RequestMethod.POST)
+	public FamilyDTO createFamily(@RequestBody FamilyDTO family) {
 		return saveOrUpdate(family);
 	}
 
-    @RequestMapping(method = RequestMethod.PUT)
+	@RequestMapping(method = RequestMethod.PUT)
 	public FamilyDTO updateFamily(@RequestBody FamilyDTO family) {
 		return saveOrUpdate(family);
 	}
-    @RequestMapping(value="/{familyId}",method = RequestMethod.GET)
+
+	@RequestMapping(value = "/{familyId}", method = RequestMethod.GET)
 	public FamilyDTO getFamily(@PathVariable String familyId) {
 		return modelMapper.map(familyRepository.findOne(familyId), FamilyDTO.class);
 	}
-    @RequestMapping(method = RequestMethod.GET)
-   	public List<FamilyDTO> getAll() {
-    	List<PersistentFamily> pfs =familyRepository.findAll();
-    	
-   		return pfs.stream().map(p -> modelMapper.map(p, FamilyDTO.class)).collect(Collectors.toList());
-   	}
-    
-    @RequestMapping(value = "/expense-descriptions/{familyId}", method = RequestMethod.GET)
-   	public Set<String> getDistinctExpenseDescriptions(@PathVariable String familyId) {
-    	Family f = familyRepository.findOne(familyId);
-    	Set<String> ds = new HashSet<String>();
-    	for (Transaction t : f.getOutgoingTransactions()) {
-    		if (t instanceof AdHocTransaction) {
-    			ds.add(((AdHocTransaction) t).getDescription());
-    		}
-    	}
-    	return ds;
-   	}
-    @RequestMapping(value="/{familyId}",method = RequestMethod.DELETE)
+
+	@RequestMapping(method = RequestMethod.GET)
+	public List<FamilyDTO> getAll() {
+		List<PersistentFamily> pfs = null;
+		String username = IDTokenContext.getUsername();
+		if (username != null) {
+			pfs = familyRepository.findByMembersUsername(username);
+
+		} else {
+			pfs = familyRepository.findAll();
+		}
+
+		return pfs.stream().map(p -> modelMapper.map(p, FamilyDTO.class)).collect(Collectors.toList());
+	}
+
+	@RequestMapping(value = "/expense-descriptions/{familyId}", method = RequestMethod.GET)
+	public Set<String> getDistinctExpenseDescriptions(@PathVariable String familyId) {
+		Family f = familyRepository.findOne(familyId);
+		Set<String> ds = new HashSet<String>();
+		for (Transaction t : f.getOutgoingTransactions()) {
+			if (t instanceof AdHocTransaction) {
+				ds.add(((AdHocTransaction) t).getDescription());
+			}
+		}
+		return ds;
+	}
+
+	@RequestMapping(value = "/{familyId}", method = RequestMethod.DELETE)
 	public void deleteFamily(FamilyDTO family) {
 		throw new RuntimeException("Not Implemented Yet!");
 	}
-	
 
 	private FamilyDTO saveOrUpdate(FamilyDTO family) {
 		PersistentFamily pFamily = modelMapper.map(family, PersistentFamily.class);
@@ -91,7 +104,6 @@ public class FamilyController {
 		return modelMapper.map(pFamily, FamilyDTO.class);
 	}
 
-	
 	private void assignCode(Spender s) {
 		if (s.getCode() == null) {
 			s.setCode(UUIDGenerator.getUUID());

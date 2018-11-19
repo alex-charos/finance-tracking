@@ -3,6 +3,8 @@ package gr.charos.homeapp.finance.utils;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.mail.Session;
+
 import gr.charos.homeapp.commons.model.Spender;
 import gr.charos.homeapp.commons.model.forecast.Forecast;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
@@ -28,6 +30,7 @@ public class FamilyUtil {
 				spender = s;
 			}
 		}
+		
 
 		return spender;
 	}
