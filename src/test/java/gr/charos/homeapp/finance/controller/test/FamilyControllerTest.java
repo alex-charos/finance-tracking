@@ -9,8 +9,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import gr.charos.homeapp.finance.config.ModelMapperConfig;
 import gr.charos.homeapp.finance.controller.FamilyController;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
 import gr.charos.homeapp.finance.dto.FamilyDTO;
@@ -24,12 +26,13 @@ public class FamilyControllerTest extends SpringAwareTest {
 	
 	
 	@Mock
-	@Autowired
 	PersistentFamilyRepository familyRepository;
 	
-	@Autowired
-	@InjectMocks
+	ModelMapper mm = new ModelMapper();
+	
 	FamilyController familyController;
+	
+	
 	
 	@Before
 	public void initMocks() {
@@ -38,6 +41,7 @@ public class FamilyControllerTest extends SpringAwareTest {
 		         return (PersistentFamily) invocation.getArguments()[0];
 		     }
 		 });
+		familyController = new FamilyController(familyRepository, mm);
 	}
 	
 	@Test

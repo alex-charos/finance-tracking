@@ -17,11 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import gr.charos.homeapp.commons.model.transaction.RawTransactionRequest;
 import gr.charos.homeapp.finance.config.ApplicationProperties;
 import gr.charos.homeapp.finance.config.ApplicationProperties.Mail;
 import gr.charos.homeapp.finance.service.IncomingTransactionService;
 import gr.charos.homeapp.finance.service.Poller;
-import gr.charos.homeapp.finance.service.model.RawTransactionRequest;
 
 @Service
 public class IncomingMailTransactionService extends IncomingTransactionService implements Poller {

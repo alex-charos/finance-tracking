@@ -34,7 +34,7 @@ public class BudgetController {
 	
     @RequestMapping(value ="/{familyId}",method = RequestMethod.POST)
     public BudgetDTO createBudget(@PathVariable String familyId, @RequestBody BudgetDTO budget) {
-    	PersistentFamily family = familyRepository.findOne(familyId);
+    	PersistentFamily family = familyRepository.findById(familyId).get();
     	budget.setBudgetCode(UUID.randomUUID().toString());
     	family.getBudgets().add(modelMapper.map(budget, Budget.class));
     	familyRepository.save(family);
@@ -53,7 +53,7 @@ public class BudgetController {
 	 
     @RequestMapping(value="/{familyId}",method = RequestMethod.GET)
    	public List<BudgetDTO> getAll(@PathVariable String familyId) {
-    	PersistentFamily pfs =familyRepository.findOne(familyId);
+    	PersistentFamily pfs =familyRepository.findById(familyId).get();
     	
    		return pfs.getBudgets(). stream().map(p -> modelMapper.map(p, BudgetDTO.class)).collect(Collectors.toList());
    	}
@@ -64,7 +64,7 @@ public class BudgetController {
 	
     private BudgetDTO getBudget(String familyId, BudgetDTO budget) {
     	
-    	return familyRepository.findOne(familyId).getBudgets()
+    	return familyRepository.findById(familyId).get().getBudgets()
     			.stream()
     			.filter(p -> p.getBudgetCode().equals(budget))
     			.map(p->modelMapper.map(p, BudgetDTO.class))

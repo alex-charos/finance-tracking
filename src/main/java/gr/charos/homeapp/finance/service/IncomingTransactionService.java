@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import gr.charos.homeapp.commons.model.Spender;
 import gr.charos.homeapp.commons.model.transaction.AdHocTransaction;
+import gr.charos.homeapp.commons.model.transaction.RawTransactionRequest;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
 import gr.charos.homeapp.finance.dto.TransactionDTO;
 import gr.charos.homeapp.finance.repository.PersistentFamilyRepository;
-import gr.charos.homeapp.finance.service.model.RawTransactionRequest;
 import gr.charos.homeapp.finance.utils.FamilyUtil;
 import gr.charos.homeapp.finance.utils.UUIDGenerator;
 
@@ -22,7 +22,7 @@ public abstract class IncomingTransactionService {
 	public void createTransactions(RawTransactionRequest rtr, String familyCode, String memberCode) {
 		
 		List<TransactionDTO> transactions = TransactionDTO.fromTextToAdhocOutgoing(rtr.getTransactionsAsText(), rtr.getDate());
-		PersistentFamily family = familyRepository.findOne(familyCode);
+		PersistentFamily family = familyRepository.findById(familyCode).get();
 		transactions.forEach(transactionDto -> {
 			if (null ==  transactionDto.getTransactionType()) {
 				throw new IllegalArgumentException("No Transaction Type");
@@ -37,7 +37,7 @@ public abstract class IncomingTransactionService {
 		familyRepository.save(family);
 		
 		
-	};
+	}
 	
 
 }

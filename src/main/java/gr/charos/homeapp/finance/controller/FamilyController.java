@@ -33,11 +33,16 @@ import gr.charos.homeapp.finance.utils.UUIDGenerator;
 @CrossOrigin
 public class FamilyController {
 
-	@Autowired
 	PersistentFamilyRepository familyRepository;
 
-	@Autowired
 	ModelMapper modelMapper;
+ 
+
+	public FamilyController(@Autowired PersistentFamilyRepository familyRepository,
+			@Autowired ModelMapper modelMapper) {
+		this.familyRepository = familyRepository;
+		this.modelMapper = modelMapper;
+	}
 
 	@RequestMapping(method = RequestMethod.POST)
 	public FamilyDTO createFamily(@RequestBody FamilyDTO family) {
@@ -51,7 +56,7 @@ public class FamilyController {
 
 	@RequestMapping(value = "/{familyId}", method = RequestMethod.GET)
 	public FamilyDTO getFamily(@PathVariable String familyId) {
-		return modelMapper.map(familyRepository.findOne(familyId), FamilyDTO.class);
+		return modelMapper.map(familyRepository.findById(familyId).get(), FamilyDTO.class);
 	}
 
 	@RequestMapping(method = RequestMethod.GET)
@@ -70,7 +75,7 @@ public class FamilyController {
 
 	@RequestMapping(value = "/expense-descriptions/{familyId}", method = RequestMethod.GET)
 	public Set<String> getDistinctExpenseDescriptions(@PathVariable String familyId) {
-		Family f = familyRepository.findOne(familyId);
+		Family f = familyRepository.findById(familyId).get();
 		Set<String> ds = new HashSet<String>();
 		for (Transaction t : f.getOutgoingTransactions()) {
 			if (t instanceof AdHocTransaction) {

@@ -2,10 +2,9 @@ package gr.charos.homeapp.finance.controller.test;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.modelmapper.ModelMapper;
 
 import gr.charos.homeapp.finance.controller.ForecastController;
 import gr.charos.homeapp.finance.repository.PersistentFamilyRepository;
@@ -16,18 +15,18 @@ public class ForecastControllerTest extends SpringAwareTest {
 	
 	
 	@Mock
-	@Autowired
 	PersistentFamilyRepository familyRepository;
 	
 	
-	@Autowired
-	@InjectMocks
+	ModelMapper mm = new ModelMapper();
+	
 	ForecastController forecastController;
 	
 	
 	@Before
 	public void initMocks(){
-		Mockito.when(familyRepository.findOne(FAMILY_ID)).thenReturn(null);
+		Mockito.when(familyRepository.findById(FAMILY_ID)).thenReturn(null);
+		forecastController = new ForecastController(familyRepository, mm);
 	}
 	
 	@Test

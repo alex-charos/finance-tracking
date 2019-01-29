@@ -1,5 +1,7 @@
 package gr.charos.homeapp.finance.dto;
 
+import java.time.Month;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -135,12 +137,33 @@ public class TransactionDTO {
 
 	private static Date parseDate(String date) {
 		String[] parts = date.split("/");
+		Integer targetMonth  =Integer.parseInt(parts[1].trim()) ;
+		Integer targetDay = Integer.parseInt(parts[0].trim());
+		if (targetMonth > 12 || targetMonth <1) {
+			throw new IllegalArgumentException("Invalid month");
+		}
+		if (targetDay > 31 || targetDay <1) {
+			throw new IllegalArgumentException("Invalid day");
+		}
+		ZonedDateTime zdt = ZonedDateTime.now();
+		while(zdt.getDayOfMonth()!= targetDay) {
+			zdt = zdt.minusDays(1);
+		}
+		
+		while(zdt.getMonth()!= Month.of(targetMonth)) {
+			zdt = zdt.minusMonths(1);
+		}
+		
+		
+		return Date.from(zdt.toInstant());
+		
 
-		Calendar cal = GregorianCalendar.getInstance();
-		cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(parts[0].trim()));
-		cal.set(Calendar.MONTH, Integer.parseInt(parts[1].trim()) - 1);
-
-		return cal.getTime();
+//		Calendar cal = GregorianCalendar.getInstance();
+//		
+//		cal.set(Calendar.DAY_OF_MONTH, targetDay );
+//		cal.set(Calendar.MONTH, targetMonth);
+//
+//		return cal.getTime();
 	}
 
 	private static boolean isDate(String line) {

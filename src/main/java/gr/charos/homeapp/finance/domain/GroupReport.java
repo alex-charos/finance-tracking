@@ -1,8 +1,8 @@
 package gr.charos.homeapp.finance.domain;
 
 import java.time.DayOfWeek;
+import java.time.YearMonth;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -16,7 +16,7 @@ public class GroupReport {
 	private Integer summedExpencesInCents;
 	private Date fromDate;
 	private Date toDate;
-	private ChronoUnit unit;
+	private GroupingPeriod unit;
 
 	public Map<String, Integer> getGroupedExpensesInCents() {
 		return groupedExpensesInCents;
@@ -34,23 +34,27 @@ public class GroupReport {
 		return toDate;
 	}
 
-	public ChronoUnit getUnit() {
+	public GroupingPeriod getUnit() {
 		return unit;
 	}
 
-	public GroupReport(ChronoUnit unit, Collection<Transaction> transactions) {
+	public GroupReport(GroupingPeriod unit, Collection<Transaction> transactions) {
 		ZonedDateTime fromTemplate = ZonedDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
 		Date from;
-		Date to = new Date();;
+		Date to = new Date();
 		switch (unit) {
-		case DAYS:
+		case CURRENT_DAY:
 			from = Date.from(fromTemplate.toInstant());
 			break;
-		case WEEKS:
+		case CURRENT_WEEK:
 			from = Date.from(fromTemplate.with(DayOfWeek.MONDAY).toInstant());
 			break;
-		case MONTHS:
+		case CURRENT_MONTH:
 			from = Date.from(fromTemplate.withDayOfMonth(1).toInstant());
+			break;
+		case RUNNING_MONTH:
+			int daysInCurrentMonth = YearMonth.now().lengthOfMonth();
+			from = Date.from(fromTemplate.minusDays(daysInCurrentMonth).toInstant());
 			break;
 		default:
 			from = new Date();

@@ -1,10 +1,10 @@
 package gr.charos.homeapp.finance.controller;
 
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,6 +25,7 @@ import gr.charos.homeapp.commons.model.transaction.ForecastTransaction;
 import gr.charos.homeapp.commons.model.transaction.Transaction;
 import gr.charos.homeapp.finance.context.IDTokenContext;
 import gr.charos.homeapp.finance.domain.GroupReport;
+import gr.charos.homeapp.finance.domain.GroupingPeriod;
 import gr.charos.homeapp.finance.domain.PersistentFamily;
 import gr.charos.homeapp.finance.dto.TransactionDTO;
 import gr.charos.homeapp.finance.predicates.DateFilter;
@@ -47,8 +48,10 @@ public class TransactionController {
 
 	@RequestMapping(value = "/incoming/{familyId}", method = RequestMethod.GET)
 	public List<TransactionDTO> getIncomingTransactions(@PathVariable String familyId, @RequestParam(required=true) Long fromDate, @RequestParam(required=true) Long toDate) {
-		PersistentFamily family = familyRepository.findOne(familyId);
-		return mapTransactions(family.getIncomingTransactions(), fromDate, toDate);
+		
+		Optional<PersistentFamily> family = familyRepository.findById(familyId);
+		return family.map(p->mapTransactions(p.getIncomingTransactions(), fromDate, toDate)).orElseThrow(IllegalArgumentException::new);
+		
 	}
 	
 	private List<TransactionDTO> mapTransactions(Set<Transaction> transactions, Long fromDate, Long toDate) {
@@ -84,15 +87,16 @@ public class TransactionController {
 		PersistentFamily family = familyRepository.findByMembersUsername(username).stream().findFirst().get();
 		
 		
-		GroupReport group1 = new GroupReport(ChronoUnit.DAYS, family.getOutgoingTransactions());
-		GroupReport group2 = new GroupReport(ChronoUnit.WEEKS, family.getOutgoingTransactions());
-		GroupReport group3 = new GroupReport(ChronoUnit.MONTHS , family.getOutgoingTransactions());
-		return Arrays.asList(group1,group2, group3);
+		GroupReport group1 = new GroupReport(GroupingPeriod.CURRENT_DAY, family.getOutgoingTransactions());
+		GroupReport group2 = new GroupReport(GroupingPeriod.CURRENT_WEEK, family.getOutgoingTransactions());
+		GroupReport group3 = new GroupReport(GroupingPeriod.CURRENT_MONTH , family.getOutgoingTransactions());
+		GroupReport group4 = new GroupReport(GroupingPeriod.RUNNING_MONTH , family.getOutgoingTransactions());
+		return Arrays.asList(group1,group2, group3, group4);
 	}
 	
 	@RequestMapping(value = "/incoming/{familyId}/{memberCode}", method = RequestMethod.GET)
 	public Set<TransactionDTO> getIncomingTransactions(@PathVariable String familyId, @PathVariable String memberCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 
@@ -102,7 +106,7 @@ public class TransactionController {
 
 	@RequestMapping(value = "/outgoing/{familyId}/{memberCode}", method = RequestMethod.GET)
 	public Set<TransactionDTO> getOutgoingTransactions(@PathVariable String familyId, @PathVariable String memberCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 
@@ -113,7 +117,7 @@ public class TransactionController {
 
 	@RequestMapping(value = "/forecast/{familyId}/{forecastCode}", method = RequestMethod.POST)
 	public TransactionDTO addForecastTransaction(@PathVariable String familyId, @PathVariable String forecastCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 
 		Spender spender = FamilyUtil.getSpenderByForecastCode(family, forecastCode);
 		Forecast f = FamilyUtil.getForecastByForecastCode(spender.getForecasts(), forecastCode);
@@ -126,7 +130,7 @@ public class TransactionController {
 
 	@RequestMapping(value = "/ad-hoc/{familyId}/{memberCode}", method = RequestMethod.POST)
 	public TransactionDTO addAdHocTransaction(@PathVariable String familyId, @PathVariable String memberCode,@RequestBody TransactionDTO transactionDto) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 
 		if (null ==  transactionDto.getTransactionType()) {
 			throw new IllegalArgumentException("No Transaction Type");
@@ -144,7 +148,7 @@ public class TransactionController {
 	
 	@RequestMapping(value = "/{familyId}/{transactionCode}", method = RequestMethod.DELETE)
 	public void deleteTransaction(@PathVariable String familyId, @PathVariable String transactionCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 
 		for (Transaction t : family.getHouse().getTransactions()) {
 			if (t.getTransactionCode().equals(transactionCode)) {

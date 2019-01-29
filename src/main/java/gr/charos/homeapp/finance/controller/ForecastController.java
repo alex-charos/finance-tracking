@@ -30,24 +30,29 @@ public class ForecastController {
 
 	@Autowired
 	ModelMapper modelMapper;
+	
+	public ForecastController(PersistentFamilyRepository familyRepository, ModelMapper modelMapper) {
+		this.familyRepository = familyRepository ;
+		this.modelMapper = modelMapper;
+	}
 
 	@RequestMapping(value = "/incoming/{familyId}", method = RequestMethod.GET)
 	public Set<ForecastDTO> getIncomingForecasts(@PathVariable String familyId) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 		return family.getIncomingForecasts().stream().map(forecast -> modelMapper.map(forecast, ForecastDTO.class))
 				.collect(Collectors.toSet());
 	}
 
 	@RequestMapping(value = "/outgoing/{familyId}", method = RequestMethod.GET)
 	public Set<ForecastDTO> getOutgoingForecasts(@PathVariable String familyId) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 		return family.getOutgoingForecasts().stream().map(forecast -> modelMapper.map(forecast, ForecastDTO.class))
 				.collect(Collectors.toSet());
 	}
 
 	@RequestMapping(value = "/incoming/{familyId}/{memberCode}", method = RequestMethod.GET)
 	public Set<ForecastDTO> getIncomingForecasts(@PathVariable String familyId, @PathVariable String memberCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 
@@ -57,7 +62,7 @@ public class ForecastController {
 
 	@RequestMapping(value = "/outgoing/{familyId}/{memberCode}", method = RequestMethod.GET)
 	public Set<ForecastDTO> getOutgoingForecasts(@PathVariable String familyId, @PathVariable String memberCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 
 		return spender.getOutgoingForecasts().stream().map(forecast -> modelMapper.map(forecast, ForecastDTO.class))
@@ -67,7 +72,7 @@ public class ForecastController {
 	@RequestMapping(value = "/{familyId}/{memberCode}", method = RequestMethod.POST)
 	public ForecastDTO addForecast(@PathVariable String familyId, @PathVariable String memberCode,
 			@RequestBody ForecastDTO forecast) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 
 		forecast.setForecastCode(UUIDGenerator.getUUID());
@@ -81,7 +86,7 @@ public class ForecastController {
 	@RequestMapping(value = "/{familyId}/{memberCode}/{forecastCode}", method = RequestMethod.DELETE)
 	public void deleteForecast(@PathVariable String familyId, @PathVariable String memberCode,
 			@PathVariable String forecastCode) {
-		PersistentFamily family = familyRepository.findOne(familyId);
+		PersistentFamily family = familyRepository.findById(familyId).get();
 		Spender spender = FamilyUtil.getSpenderByMemberCode(family, memberCode);
 
 		for (Forecast f : spender.getForecasts()) {
